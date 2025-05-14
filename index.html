@@ -1,0 +1,231 @@
+```
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tic Tac Toe Game</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap');
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 100vh;
+    margin: 0;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    font-family: 'Poppins', sans-serif;
+    color: #f0f0f0;
+    padding: 2rem;
+  }
+
+  h1 {
+    font-weight: 700;
+    font-size: 3rem;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    margin-bottom: 1rem;
+    user-select: none;
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(3, 100px);
+    grid-template-rows: repeat(3, 100px);
+    gap: 15px;
+    margin-bottom: 1.5rem;
+  }
+
+  .square {
+    background: #f0f0f0;
+    border-radius: 12px;
+    box-shadow:
+      inset 0 0 5px #bbb,
+      0 5px 15px rgba(0,0,0,0.2);
+    font-size: 4.5rem;
+    color: #333;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+    transition: background 0.3s ease, transform 0.2s ease;
+  }
+
+  .square:hover {
+    background: #cde8ff;
+    transform: scale(1.05);
+  }
+
+  .square.taken {
+    cursor: default;
+    color: #222;
+    background: #b2dfdb;
+    box-shadow:
+      inset 0 2px 4px #777;
+  }
+
+  #status {
+    font-size: 1.5rem;
+    min-height: 2rem;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+  }
+
+  #restartButton {
+    background: #764ba2;
+    border: none;
+    border-radius: 30px;
+    padding: 0.8rem 2rem;
+    color: #f0f0f0;
+    font-size: 1.2rem;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(118,75,162,0.7);
+    transition: background 0.3s ease;
+    user-select: none;
+  }
+
+  #restartButton:hover {
+    background: #5d3a91;
+  }
+
+  @media screen and (max-width: 400px) {
+    #board {
+      grid-template-columns: repeat(3, 80px);
+      grid-template-rows: repeat(3, 80px);
+      gap: 10px;
+    }
+    .square {
+      font-size: 3.5rem;
+    }
+  }
+</style>
+</head>
+<body>
+  <h1>Tic Tac Toe</h1>
+  <div id="board" role="grid" aria-label="Tic Tac Toe Board">
+    <div class="square" role="gridcell" data-index="0" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="1" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="2" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="3" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="4" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="5" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="6" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="7" tabindex="0"></div>
+    <div class="square" role="gridcell" data-index="8" tabindex="0"></div>
+  </div>
+  <div id="status" aria-live="polite"></div>
+  <button id="restartButton" aria-label="Restart Game">Restart Game</button>
+
+<script>
+  (() => {
+    const board = document.getElementById('board');
+    const squares = board.querySelectorAll('.square');
+    const status = document.getElementById('status');
+    const restartButton = document.getElementById('restartButton');
+
+    let boardState = Array(9).fill('');
+    let currentPlayer = 'X';
+    let gameActive = true;
+
+    const winningPatterns = [
+      [0,1,2],[3,4,5],[6,7,8], // rows
+      [0,3,6],[1,4,7],[2,5,8], // columns
+      [0,4,8],[2,4,6]          // diagonals
+    ];
+
+    function handleSquareClick(e) {
+      const square = e.currentTarget;
+      const index = parseInt(square.getAttribute('data-index'), 10);
+      if (!gameActive || boardState[index] !== '') return;
+
+      updateSquare(square, index);
+      if (checkWin()) {
+        status.textContent = `Player ${currentPlayer} wins! 🎉`;
+        highlightWinningSquares();
+        gameActive = false;
+        return;
+      }
+
+      if (isDraw()) {
+        status.textContent = 'It\'s a draw! 🤝';
+        gameActive = false;
+        return;
+      }
+
+      switchPlayer();
+    }
+
+    function updateSquare(square, index) {
+      boardState[index] = currentPlayer;
+      square.textContent = currentPlayer;
+      square.classList.add('taken');
+    }
+
+    function checkWin() {
+      return winningPatterns.some(pattern => {
+        return pattern.every(index => boardState[index] === currentPlayer);
+      });
+    }
+
+    function highlightWinningSquares() {
+      winningPatterns.forEach(pattern => {
+        if (pattern.every(index => boardState[index] === currentPlayer)) {
+          pattern.forEach(idx => {
+            squares[idx].style.backgroundColor = currentPlayer === 'X' ? '#80cbc4' : '#f48fb1';
+            squares[idx].style.color = '#222';
+            squares[idx].style.fontWeight = '900';
+          });
+        }
+      });
+    }
+
+    function isDraw() {
+      return boardState.every(square => square !== '');
+    }
+
+    function switchPlayer() {
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+      status.textContent = `Player ${currentPlayer}'s turn`;
+    }
+
+    function resetGame() {
+      boardState.fill('');
+      squares.forEach(square => {
+        square.textContent = '';
+        square.classList.remove('taken');
+        square.style.backgroundColor = '#f0f0f0';
+        square.style.color = '#333';
+        square.style.fontWeight = 'normal';
+      });
+      currentPlayer = 'X';
+      gameActive = true;
+      status.textContent = `Player ${currentPlayer}'s turn`;
+    }
+
+    // Keyboard accessibility: allow space/enter key to place marks
+    squares.forEach(square => {
+      square.addEventListener('click', handleSquareClick);
+      square.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          square.click();
+        }
+      });
+    });
+
+    restartButton.addEventListener('click', resetGame);
+
+    // Initialize status
+    status.textContent = `Player ${currentPlayer}'s turn`;
+  })();
+</script>
+</body>
+</html>
+```
